@@ -1,4 +1,4 @@
-:log info "[UPDATER] Started"
+#:log info "[UPDATER] Started"
 #== Get env varibles ==
 :global backupName
 :global teleURL
@@ -11,6 +11,13 @@
 :local verFirmware [/system routerboard get current-firmware]
 :local verPackages [/system package update get installed-version]
 :local message "[UPDATER] Checking firmware and RouterOS update..."
+
+:global SendConfig do={
+    :global backupName
+    #/tool fetch url="$teleURL/$teleBotToken/sendDocument?chat_id=$teleChatToken&parse_mode=markdown&document=$backupName" keep-result=no
+    :delay 60s;
+    /system reboot;
+}
 
 :log info $message
 
@@ -29,11 +36,10 @@ check-for-updates
     /system backup save dont-encrypt=yes name=($backupName)
     :log info "[UPDATER] Sending notification to Telegram: $message";
     :local msg ("*Router: $routerName ($verFirmware@$verPackages^$routerUptime~$cpuLoad%):*%0A")
-    :set $msg ($msg . "```$message```")
+    :set $msg ($msg . "```$message``` [Changelog](https://mikrotik.com/current.rss)")
     /system package update install;
-    /tool fetch url="$teleURL/$teleBotToken/sendMessage?chat_id=$c=teleChatToken&parse_mode=markdown&text=$msg" keep-result=no
-    :delay 60s;
-    /system reboot
+    /tool fetch url="$teleURL/$teleBotToken/sendMessage?chat_id=$teleChatToken&parse_mode=markdown&text=$msg" keep-result=no
+    $SendConfig
 }
 
 /system routerboard
@@ -41,14 +47,13 @@ check-for-updates
     #:local currentfw [/system routerboard get current-firmware]
     :set message "Updating firmware from $[/system routerboard get current-firmware] to $[/system routerboard get upgrade-firmware]";
     /system backup save dont-encrypt=yes name=($backupName)
-    :log info "[UPDATER] Sending notification to slack: $message";
+    :log info "[UPDATER] Sending notification to telegram: $message";
     :local msg ("*Router: $routerName ($verFirmware@$verPackages^$routerUptime~$cpuLoad%):*%0A")
-    :set $msg ($msg . "```$message```")
+    :set $msg ($msg . "```$message``` [Changelog](https://mikrotik.com/current.rss)")
     /system routerboard upgrade;
     /tool fetch url="$teleURL/$teleBotToken/sendMessage?chat_id=$teleChatToken&parse_mode=markdown&text=$msg" keep-result=no
-    :delay 60s;
-    /system reboot;
-    } else={
+    $SendConfig
+} else={
         :set message "[UPDATER] Firmware $[/system routerboard get current-firmware] and RouterOS $[/system package update get installed-version] is up to date";
         :log info $message
-    }
+}

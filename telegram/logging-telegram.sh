@@ -11,7 +11,7 @@
 :local verFirmware [/system routerboard get current-firmware]
 :local verPackages [/system package update get installed-version]
 :local scheduleName "check-logs-tm"
-:local startBuf [:toarray [/log find message~"logged in" || message~"login failure" || topics~"critical" || topics~"error" || topics~"warning" || topics~"interface"]]
+:local startBuf [:toarray [/log find message~"logged in" || message~"login failure" || message~"disconnected, unicast key exchange timeout" || topics~"critical" || topics~"error" || topics~"warning" || topics~"interface"]]
 :local removeThese {"whatever string";" you want"}
 # END SETUP
 
